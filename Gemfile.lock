@@ -1,0 +1,15 @@
+PATH
+  remote: .
+  specs:
+    live_segmenter (0.0.1)
+
+GEM
+  remote: http://rubygems.org/
+  specs:
+
+PLATFORMS
+  java
+  ruby
+
+DEPENDENCIES
+  live_segmenter ()!

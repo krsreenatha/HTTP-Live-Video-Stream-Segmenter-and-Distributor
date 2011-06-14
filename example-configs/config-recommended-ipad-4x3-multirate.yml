@@ -27,9 +27,6 @@ index_segment_count: 15
 # this command is used for multirate encodings and is what pushes the encoders
 source_command: 'cat %s'
 
-# This is the location of the segmenter
-segmenter_binary: './live_segmenter'
-
 # the encoding profile to use
 encoding_profile: [ 'cell_4x3_150k', 'cell_4x3_240k', 'cell_4x3_440k', 'wifi_4x3_640k', 'wifi_4x3_840k', 'wifi_4x3_1240k' ]
 

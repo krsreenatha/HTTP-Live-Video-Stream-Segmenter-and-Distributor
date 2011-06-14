@@ -31,7 +31,7 @@ hsencoder = nil
 trap('INT') { hsencoder.stop_encoding if !hsencoder.nil?  }
 
 if ARGV.length != 1
-  puts "Usage: http_streamer.rb <config file>"
+  puts "Usage: http_streamer <config file>"
   exit 1
 end
 

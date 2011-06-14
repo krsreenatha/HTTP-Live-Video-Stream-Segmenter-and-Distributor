@@ -27,9 +27,6 @@ index_segment_count: 15
 # this command is used for multirate encodings and is what pushes the encoders
 source_command: 'ffmpeg -er 4 -y -i %s -vcodec copy -acodec copy -f ogg -'
 
-# This is the location of the segmenter
-segmenter_binary: './live_segmenter'
-
 # the encoding profile to use
 encoding_profile: [ 'ep_128k', 'ep_386k', 'ep_512k' ]
 

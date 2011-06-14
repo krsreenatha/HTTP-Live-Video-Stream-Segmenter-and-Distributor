@@ -1,6 +1,7 @@
 require 'mkmf'
 
 $LIBS << " #{ENV["LIBS"]}"
+$LDFLAGS << " #{ENV["LDFLAGS"]}"
 $CFLAGS << " -Wall -g #{ENV["CFLAGS"]}"
 
 have_library('avformat')
@@ -40,6 +41,10 @@ def create(target)
   mfile = open("Makefile", "wb")
   n = "$(TARGET)"
   mfile.print "
+ldflags  = #{$LDFLAGS}
+dldflags = #{$DLDFLAGS}
+archflag = #{$ARCH_FLAG}
+DLDFLAGS = $(ldflags) $(dldflags) $(archflag)
 TARGET = #{target}
 CC = #{CONFIG['CC']}
 CFLAGS   = #{CONFIG['CCDLFLAGS']} #$CFLAGS #$ARCH_FLAG

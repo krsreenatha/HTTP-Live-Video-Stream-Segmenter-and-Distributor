@@ -128,7 +128,8 @@ class HSEncoder
   def process_encoding(encoding_profile, input_location, encoding_pipes)
     encoding_config = @config[encoding_profile]
 
-    command_ffmpeg = encoding_config['ffmpeg_command'] % [input_location, @config['segmenter_binary'], @config['segment_length'], @config['temp_dir'], @config['segment_prefix'] + '_' + encoding_profile, encoding_profile]
+    binary = File.expand_path File.join(File.dirname(__FILE__), "..", "bin", "live_segmenter")
+    command_ffmpeg = encoding_config['ffmpeg_command'] % [input_location, binary, @config['segment_length'], @config['temp_dir'], @config['segment_prefix'] + '_' + encoding_profile, encoding_profile]
 
     begin
       execute_ffmpeg_and_segmenter(command_ffmpeg, encoding_profile, encoding_pipes)
