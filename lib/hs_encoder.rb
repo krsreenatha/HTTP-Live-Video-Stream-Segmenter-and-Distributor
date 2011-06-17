@@ -45,7 +45,7 @@ class HSEncoder
   end
 
   def stop_encoding
-    @log.info("Stoping encoder.")
+    @log.info("Stopping encoder.")
     begin
       @stop_stdin.print 'q' if !@stop_stdin.nil?
     rescue
@@ -65,12 +65,19 @@ class HSEncoder
       @stop_stdin = stdin
       stderr_thread = Thread.new do
         stderr.each("\r") do |line|
+          out = false
           if line =~ /ffmpeg/i 
             @log.debug("Master encoder: #{line}")
+            out = true
           end
 
           if line =~ /error/i
             @log.error("Master encoder: #{line}")
+            out = true
+          end
+
+          unless out 
+            @log.info("STDERR: #{line}")
           end
         end
       end
@@ -105,17 +112,25 @@ class HSEncoder
       end
 
       stderr.each("\r") do |line|
+        out = false
         if line =~ /segmenter: (.*)/i
           @log.debug("Segment command #{encoding_profile}: *#{$1}*")
           @hs_transfer << $1
+          out = true
         end
 
         if line =~ /ffmpeg/i 
           @log.debug("Encoder #{encoding_profile}: #{line}")
+          out = true
         end
   
         if line =~ /error/i
           @log.error("Encoder #{encoding_profile}: #{line}")
+          out = true
+        end
+
+        unless out 
+          @log.info("STDERR: #{line}")
         end
       end
     end

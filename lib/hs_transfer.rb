@@ -137,15 +137,16 @@ class HSTransfer
 
   def create_index_and_run_transfer(value)
     (first_segment, last_segment, stream_end, encoding_profile) = value.strip.split(%r{,\s*})
-    create_index(@config['index_segment_count'], @config['segment_length'], @config['segment_prefix'], encoding_profile, @config['url_prefix'], first_segment.to_i, last_segment.to_i, stream_end.to_i == 1)
+#    create_index(@config['index_segment_count'], @config['segment_length'], @config['segment_prefix'], encoding_profile, @config['url_prefix'], first_segment.to_i, last_segment.to_i, stream_end.to_i == 1)
 
     # Transfer the index
-    final_index = "%s_%s.m3u8" % [@config['index_prefix'], encoding_profile]
-    transfer_file("tmp.index.#{encoding_profile}.m3u8", "#{final_index}")
+#    final_index = "%s_%s.m3u8" % [@config['index_prefix'], encoding_profile]
+#    transfer_file("tmp.index.#{encoding_profile}.m3u8", "#{final_index}")
 
     # Transfer the video stream
-    video_filename = "#{@config['temp_dir']}/#{@config['segment_prefix']}_#{encoding_profile}-%05u.ts" % last_segment.to_i
-    dest_video_filename = "#{@config['segment_prefix']}_#{encoding_profile}-%05u.ts" % last_segment.to_i
+    video_filename = Dir["#{@config['temp_dir']}/#{@config['segment_prefix']}_#{encoding_profile}-*-%05u.ts" % last_segment.to_i].first
+    timestamp = video_filename.split("-")[-2]
+    dest_video_filename = "#{@config['segment_prefix']}_#{encoding_profile}-#{timestamp}-%05u.ts" % last_segment.to_i
     transfer_file(video_filename, dest_video_filename)
   end
 

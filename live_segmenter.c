@@ -113,7 +113,7 @@ int main(int argc, char **argv)
 {
   if(argc != 5)
   {
-    fprintf(stderr, "Usage: %s <segment length> <output location> <filename prefix> <encoding profile>\n", argv[0]);
+    fprintf(stderr, "Usage: %s <segment length> <output location> <filename prefix> <encoding profile>\n\r", argv[0]);
     return 1;
   }
 
@@ -127,10 +127,10 @@ int main(int argc, char **argv)
   config.encoding_profile = argv[4];
   config.input_filename = "pipe://1";
 
-  char *output_filename = malloc(sizeof(char) * (strlen(config.temp_directory) + 1 + strlen(config.filename_prefix) + 10));
+  char *output_filename = malloc(sizeof(char) * (strlen(config.temp_directory) + 1 + strlen(config.filename_prefix) + 22));
   if (!output_filename) 
   {
-    fprintf(stderr, "Segmenter error: Could not allocate space for output filenames\n");
+    fprintf(stderr, "Segmenter error: Could not allocate space for output filenames\n\r");
     exit(1);
   }
 
@@ -141,7 +141,7 @@ int main(int argc, char **argv)
   AVInputFormat *input_format = av_find_input_format("mpegts");
   if (!input_format) 
   {
-    fprintf(stderr, "Segmenter error: Could not find MPEG-TS demuxer\n");
+    fprintf(stderr, "Segmenter error: Could not find MPEG-TS demuxer\n\r");
     exit(1);
   }
 
@@ -149,13 +149,13 @@ int main(int argc, char **argv)
   int ret = av_open_input_file(&input_context, config.input_filename, input_format, 0, NULL);
   if (ret != 0) 
   {
-    fprintf(stderr, "Segmenter error: Could not open input file, make sure it is an mpegts file: %d\n", ret);
+    fprintf(stderr, "Segmenter error: Could not open input file, make sure it is an mpegts file: %d\n\r", ret);
     exit(1);
   }
 
   if (av_find_stream_info(input_context) < 0) 
   {
-    fprintf(stderr, "Segmenter error: Could not read stream information\n");
+    fprintf(stderr, "Segmenter error: Could not read stream information\n\r");
     exit(1);
   }
 
@@ -166,14 +166,14 @@ int main(int argc, char **argv)
 #endif
   if (!output_format) 
   {
-    fprintf(stderr, "Segmenter error: Could not find MPEG-TS muxer\n");
+    fprintf(stderr, "Segmenter error: Could not find MPEG-TS muxer\n\r");
     exit(1);
   }
 
   AVFormatContext *output_context = avformat_alloc_context();
   if (!output_context) 
   {
-    fprintf(stderr, "Segmenter error: Could not allocated output context");
+    fprintf(stderr, "Segmenter error: Could not allocated output context\n\r");
     exit(1);
   }
   output_context->oformat = output_format;
@@ -181,12 +181,12 @@ int main(int argc, char **argv)
   int video_index = -1;
   int audio_index = -1;
 
-  AVStream *video_stream;
-  AVStream *audio_stream;
+  AVStream *video_stream = NULL;
+  AVStream *audio_stream = NULL;
 
   int i;
 
-  for (i = 0; i < input_context->nb_streams && (video_index < 0 || audio_index < 0); i++) 
+  for (i = 0; i < input_context->nb_streams; i++) 
   {
     switch (input_context->streams[i]->codec->codec_type) {
       case CODEC_TYPE_VIDEO:
@@ -200,6 +200,7 @@ int main(int argc, char **argv)
         audio_stream = add_output_stream(output_context, input_context->streams[i]);
         break;
       default:
+        fprintf(stderr, "DISCARDING STREAM OF TYPE: %d\n\r", input_context->streams[i]->codec->codec_type);
         input_context->streams[i]->discard = AVDISCARD_ALL;
         break;
     }
@@ -207,7 +208,7 @@ int main(int argc, char **argv)
 
   if (av_set_parameters(output_context, NULL) < 0) 
   {
-    fprintf(stderr, "Segmenter error: Invalid output format parameters\n");
+    fprintf(stderr, "Segmenter error: Invalid output format parameters\n\r");
     exit(1);
   }
 
@@ -218,26 +219,28 @@ int main(int argc, char **argv)
     AVCodec *codec = avcodec_find_decoder(video_stream->codec->codec_id);
     if (!codec) 
     {
-      fprintf(stderr, "Segmenter error: Could not find video decoder, key frames will not be honored\n");
+      fprintf(stderr, "Segmenter error: Could not find video decoder, key frames will not be honored\n\r");
     }
 
     if (avcodec_open(video_stream->codec, codec) < 0) 
     {
-      fprintf(stderr, "Segmenter error: Could not open video decoder, key frames will not be honored\n");
+      fprintf(stderr, "Segmenter error: Could not open video decoder, key frames will not be honored\n\r");
     }
   }
 
   unsigned int output_index = 1;
-  snprintf(output_filename, strlen(config.temp_directory) + 1 + strlen(config.filename_prefix) + 10, "%s/%s-%05u.ts", config.temp_directory, config.filename_prefix, output_index++);
+  int64_t start = 0;
+  fprintf(stderr, "Outputting pst: %011lld\n\r", start);
+  snprintf(output_filename, strlen(config.temp_directory) + 1 + strlen(config.filename_prefix) + 22, "%s/%s-%011lld-%05u.ts", config.temp_directory, config.filename_prefix, start, output_index++);
   if (url_fopen(&output_context->pb, output_filename, URL_WRONLY) < 0) 
   {
-    fprintf(stderr, "Segmenter error: Could not open '%s'\n", output_filename);
+    fprintf(stderr, "Segmenter error: Could not open '%s'\n\r", output_filename);
     exit(1);
   }
 
   if (av_write_header(output_context)) 
   {
-    fprintf(stderr, "Segmenter error: Could not write mpegts header to first output file\n");
+    fprintf(stderr, "Segmenter error: Could not write mpegts header to first output file\n\r");
     exit(1);
   }
 
@@ -246,6 +249,7 @@ int main(int argc, char **argv)
 
   double prev_segment_time = 0;
   int decode_done;
+
   do 
   {
     double segment_time;
@@ -259,7 +263,7 @@ int main(int argc, char **argv)
 
     if (av_dup_packet(&packet) < 0) 
     {
-      fprintf(stderr, "Segmenter error: Could not duplicate packet");
+      fprintf(stderr, "Segmenter error: Could not duplicate packet\n\r");
       av_free_packet(&packet);
       break;
     }
@@ -285,24 +289,26 @@ int main(int argc, char **argv)
 
       output_transfer_command(first_segment, ++last_segment, 0, config.encoding_profile);
 
-      snprintf(output_filename, strlen(config.temp_directory) + 1 + strlen(config.filename_prefix) + 10, "%s/%s-%05u.ts", config.temp_directory, config.filename_prefix, output_index++);
+      fprintf(stderr, "Outputting pst: %011lld\n\r", start);
+      snprintf(output_filename, strlen(config.temp_directory) + 1 + strlen(config.filename_prefix) + 22, "%s/%s-%011lld-%05u.ts", config.temp_directory, config.filename_prefix, start, output_index++);
       if (url_fopen(&output_context->pb, output_filename, URL_WRONLY) < 0) 
       {
-        fprintf(stderr, "Segmenter error: Could not open '%s'\n", output_filename);
+        fprintf(stderr, "Segmenter error: Could not open '%s'\n\r", output_filename);
         break;
       }
 
+      start = packet.pts;
       prev_segment_time = segment_time;
     }
 
     ret = av_interleaved_write_frame(output_context, &packet);
     if (ret < 0) 
     {
-      fprintf(stderr, "Segmenter error: Could not write frame of stream: %d\n", ret);
+        fprintf(stderr, "Segmenter error: Could not write frame of stream: %d\n\r", ret);
     }
     else if (ret > 0) 
     {
-      fprintf(stderr, "Segmenter info: End of stream requested\n");
+      fprintf(stderr, "Segmenter info: End of stream requested\n\r");
       av_free_packet(&packet);
       break;
     }
